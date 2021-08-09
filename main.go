@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -29,23 +30,33 @@ func main() {
 	newString := `price: `
 
 	Jobs := []Job{}
-	sql := `exec reporting.dbo.getPriceChanges $1`
+	sql := `exec quikserve.dbo.getPriceChanges $1`
 	errSQL := db.SQLDB().Select(&Jobs, sql, unit_id)
 	if errSQL != nil {
 		log.Println(errSQL)
 	}
 
-	data, err1 := ioutil.ReadFile("test.rs")
+	data, err1 := ioutil.ReadFile("main.rs")
 	if err1 != nil {
 		log.Fatal(err1)
 	}
 
-	oldString = `price: ` + priceStandard + `, plu: "` + plu + `",`
-	newString = `price: ` + price + `, plu: "` + plu + `",`
+	//newdata := strings.Replace(string(data), oldString, newString, 1)
+	newdata := string(data)
 
-	newdata := strings.Replace(string(data), oldString, newString, 1)
+	for i := range Jobs {
+		priceStandard = fmt.Sprint(*&Jobs[i].PriceOld)
+		price = fmt.Sprint(*&Jobs[i].PriceNew)
+		plu = fmt.Sprint(*&Jobs[i].PLU)
 
-	err2 := WriteToFile("test2.rs", newdata)
+		oldString = `price: ` + priceStandard + `, plu: "` + plu + `"`
+		newString = `price: ` + price + `, plu: "` + plu + `"`
+
+		log.Println(oldString, newString)
+		newdata = strings.Replace(string(newdata), oldString, newString, 1)
+	}
+
+	err2 := WriteToFile("main2.rs", newdata)
 	if err2 != nil {
 		log.Fatal(err2)
 	}
